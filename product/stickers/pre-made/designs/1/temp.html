@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wall Name Sticker Design</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<style>
+  body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fafafa; }
+  .top-header-wrapper { max-width: 100%; padding-left: 15px; padding-right: 15px; margin: auto; }
+  @media (min-width: 992px) { .top-header-wrapper { max-width: 720px; } }
+  @media (min-width: 768px) and (max-width: 991.98px) { .top-header-wrapper { max-width: 600px; } }
+
+  .top-header { display: flex; justify-content: space-between; align-items: center; padding: 2rem 1rem; margin: 0 auto; flex-wrap: nowrap; }
+  @media (max-width: 767.98px) { .top-header { flex-direction: column; align-items: flex-start; } .btn-amazon { margin-top: 1rem; } }
+
+  .sticker-logo { height: 60px; width: auto; }
+
+  .btn-amazon {
+    background-color: #FF9900;
+    color: white; border-radius: 5px;
+    font-weight: 600; border: none;
+    padding: 12px 32px; font-size: 1.5rem;
+    text-decoration: none; cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    transition: background-color 0.3s ease;
+  }
+  @media (max-width: 767.98px) { .btn-amazon { padding: 8px 20px; font-size: 1.1rem; } }
+
+  .segment-section { margin-bottom: 2rem; }
+  .segment-title { font-weight: 700; font-size: 1.5rem; margin-bottom: 0.8rem; }
+
+  .image-scroll-container { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 0.5rem; }
+  .image-card { width: 250px; height: 250px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgb(0 0 0 / 0.1); }
+
+  .float-btn { position: fixed; z-index: 1050; display: none; animation: glowing-yellow 2.5s infinite alternate; box-shadow: 0 0 10px 2px #FFDD55; }
+
+  @keyframes glowing-yellow {
+    0% { box-shadow: 0 0 5px 2px #FFD54F; background-color: #FF9900; }
+    50% { box-shadow: 0 0 15px 6px #FFEB3B; background-color: #FFB300; }
+    100% { box-shadow: 0 0 5px 2px #FFD54F; background-color: #FF9900; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-header-wrapper">
+  <div class="top-header">
+    <img src="path_to_your_transparent_sticker.png" alt="Sticker Logo" class="sticker-logo"/>
+    <a id="topCta" href="https://www.amazon.com/dp/your-product-ASIN" target="_blank" rel="noopener noreferrer" class="btn-amazon">
+      Customize on Amazon →
+    </a>
+  </div>
+</div>
+
+<div id="stickers-sections" class="container my-4"></div>
+
+<a id="floatCta" href="https://www.amazon.com/dp/your-product-ASIN" target="_blank" rel="noopener noreferrer" class="btn-amazon float-btn">
+  Customize on Amazon →
+</a>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const topCta = document.getElementById('topCta');
+  const floatCta = document.getElementById('floatCta');
+  if (!topCta || !floatCta) return;
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      floatCta.style.display = entry.isIntersecting ? 'none' : 'block';
+    });
+  }, { threshold: 0.1 });
+  observer.observe(topCta);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sectionsContainer = document.getElementById('stickers-sections');
+  const urlParams = new URLSearchParams(window.location.search);
+  const filterFor = urlParams.get('for');
+  const filterColor = urlParams.get('color');
+
+  const segmentDefinitions = [
+    { title: 'For Laptop', prefix: 'laptop' },
+    { title: 'For Tablet', prefix: 'tablet' },
+    { title: 'For Phone', prefix: 'phone' },
+    { title: 'For Tumbler', prefix: 'tumbler' },
+  ];
+
+  const imageExtensions = ['png','jpg','jpeg'];
+  const maxImagesToCheck = 20;
+
+  function formatColorName(color) {
+    return color.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function checkImageExists(url) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  }
+
+  async function scanImagesByPrefix(prefix) {
+    const colorMap = {};
+    for (let num = 1; num <= maxImagesToCheck; num++) {
+      for (const ext of imageExtensions) {
+        const pattern = new RegExp(`^${prefix}-([a-zA-Z0-9-]+)-${num}\\.${ext}$`);
+        const possibleColors = ['silver','black','white','red','blue','green','pink','gold','dark-grey','light-blue','navy-blue','purple','yellow','brown'];
+        for (const color of possibleColors) {
+          const url = `images/${prefix}-${color}-${num}.${ext}`;
+          const exists = await checkImageExists(url);
+          if (exists) {
+            if (!colorMap[color]) colorMap[color] = [];
+            colorMap[color].push(url);
+          }
+        }
+      }
+    }
+    return colorMap;
+  }
+
+  async function loadDetailedSegment(prefix) {
+    const colorMap = await scanImagesByPrefix(prefix);
+    if (!Object.keys(colorMap).length) return;
+
+    if (filterColor) {
+      const title = document.createElement('h1');
+      title.textContent = `For ${formatColorName(filterColor)} ${prefix.charAt(0).toUpperCase() + prefix.slice(1)}`;
+      sectionsContainer.appendChild(title);
+
+      const row = document.createElement('div');
+      row.className = 'row g-4';
+      (colorMap[filterColor] || []).forEach(url => {
+        const col = document.createElement('div');
+        col.className = 'col-12 col-md-6';
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.width = '100%';
+        img.style.height = 'auto';
+        col.appendChild(img);
+        row.appendChild(col);
+      });
+      sectionsContainer.appendChild(row);
+
+      const otherTitle = document.createElement('h2');
+      otherTitle.textContent = 'Other Colors for ' + prefix;
+      sectionsContainer.appendChild(otherTitle);
+
+      for (const [color, images] of Object.entries(colorMap)) {
+        if (color === filterColor) continue;
+        const colorTitle = document.createElement('h3');
+        colorTitle.textContent = formatColorName(color);
+        sectionsContainer.appendChild(colorTitle);
+        const scroll = document.createElement('div');
+        scroll.className = 'image-scroll-container';
+        images.forEach(url => {
+          const a = document.createElement('a');
+          a.href = `?for=${prefix}&color=${color}`;
+          const img = document.createElement('img');
+          img.className = 'image-card';
+          img.src = url;
+          a.appendChild(img);
+          scroll.appendChild(a);
+        });
+        sectionsContainer.appendChild(scroll);
+      }
+
+    } else {
+      const mainTitle = document.createElement('h1');
+      mainTitle.textContent = `Sticker For ${prefix.charAt(0).toUpperCase() + prefix.slice(1)}`;
+      sectionsContainer.appendChild(mainTitle);
+
+      for (const [color, images] of Object.entries(colorMap)) {
+        const subTitle = document.createElement('h3');
+        subTitle.textContent = 'For ' + formatColorName(color);
+        sectionsContainer.appendChild(subTitle);
+        const scroll = document.createElement('div');
+        scroll.className = 'image-scroll-container';
+        images.forEach(url => {
+          const a = document.createElement('a');
+          a.href = `?for=${prefix}&color=${color}`;
+          const img = document.createElement('img');
+          img.className = 'image-card';
+          img.src = url;
+          a.appendChild(img);
+          scroll.appendChild(a);
+        });
+        sectionsContainer.appendChild(scroll);
+      }
+    }
+  }
+
+  async function loadMainSegments() {
+    for (const segment of segmentDefinitions) {
+      if (filterFor === segment.prefix) continue;
+      const colorMap = await scanImagesByPrefix(segment.prefix);
+      if (!Object.keys(colorMap).length) continue;
+      const section = document.createElement('div');
+      section.className = 'segment-section';
+      const link = document.createElement('a');
+      link.href = `?for=${segment.prefix}`;
+      const title = document.createElement('h2');
+      title.className = 'segment-title';
+      title.textContent = segment.title;
+      link.appendChild(title);
+      section.appendChild(link);
+
+      const scroll = document.createElement('div');
+      scroll.className = 'image-scroll-container';
+      let shown = 0;
+      for (const imgs of Object.values(colorMap)) {
+        for (const url of imgs) {
+          if (shown >= 4) break;
+          const img = document.createElement('img');
+          img.className = 'image-card';
+          img.src = url;
+          scroll.appendChild(img);
+          shown++;
+        }
+        if (shown >= 4) break;
+      }
+      section.appendChild(scroll);
+      sectionsContainer.appendChild(section);
+    }
+  }
+
+  async function initialize() {
+    if (filterFor && segmentDefinitions.some(s => s.prefix === filterFor)) {
+      await loadDetailedSegment(filterFor);
+    }
+    await loadMainSegments();
+  }
+  initialize();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
